@@ -1,69 +1,156 @@
-# GitHub Explorer
+# GitHub Repo Explorer
 
-I built this as a small full-stack app for searching GitHub users. You type a username, and it shows their profile and public repos. The React frontend talks to an Express backend, which calls the GitHub API — so the browser never hits GitHub directly. That way I can cache responses and keep an API token on the server if needed.
+A full-stack app built as part of a take-home assessment. Search any GitHub username to view their profile and public repositories. The React frontend talks to an Express backend that proxies requests to the GitHub API — keeping any auth token server-side and adding a 60-second response cache to avoid rate limits.
 
-## Running it locally
+---
 
-You need two terminals open at the same time.
+## Live Demo Links
 
-**Backend:**
+- **Frontend:** https://github-repo-explorer-self.vercel.app
+- **Backend API:** https://github-repo-explorer-api-nkqm.onrender.com
+- **Source Code:** https://github.com/sumitkumar435/github_repo_explorer
+
+> The Render backend is on a free tier — first request may take ~30 seconds to wake up.
+
+---
+
+## Tech Stack
+
+| Technology | Why |
+|-----------|-----|
+| React 18 + Vite | Fast dev setup; component model suits the card-based UI |
+| Tailwind CSS | Utility-first styling without a separate stylesheet |
+| Express.js | Lightweight proxy/cache layer between the frontend and GitHub API |
+| Node.js | Shared language across the stack |
+| GitHub REST API v3 | Official source; no auth needed for public data |
+| Vercel | Zero-config React deployment, auto-deploys on push |
+| Render | Free Node.js hosting for the Express backend |
+
+---
+
+## How to Run Locally
+
+You need **two terminals** — one for the server, one for the client.
 
 ```bash
+# Terminal 1 — backend
 cd server
 npm install
 npm run dev
-```
+# Runs on http://localhost:3000
 
-**Frontend:**
-
-```bash
+# Terminal 2 — frontend
 cd client
 npm install
 npm run dev
+# Open http://localhost:5173
 ```
 
-Open http://localhost:5173 in your browser.
+**Optional — GitHub token** (raises rate limit from 60 to 5000 req/hr):
 
-To run tests:
-
-```bash
-cd client
-npm test
-```
-
-### GitHub token (optional)
-
-Without a token, GitHub only gives you 60 requests per hour. If you want more, create a `server/.env` file:
-
+Create `server/.env`:
 ```
 GITHUB_TOKEN=your_token_here
 ```
+Generate a token (no scopes needed) at https://github.com/settings/tokens
 
-A classic token with no scopes is enough for public data — you can make one at https://github.com/settings/tokens
+**Run tests:**
+```bash
+cd client && npm test
+```
 
-## What it does
+---
 
-- Search by username (Enter or click Search)
-- Shows avatar, name, bio, followers, following, and public repo count
-- Lists public repos with name, description, language, stars, and last updated date
-- Sort repos by stars, name, or last updated
-- Error message if the username doesn't exist
-- Handles network errors and rate limits without crashing
-- Backend caches responses for 60 seconds
-- "Load more" for users with more than 30 repos
-- Click a repo to see default branch and open issues count
-- Recently searched usernames saved in localStorage
-- Simple bar chart of repo languages (from loaded repos only)
+## API Documentation
 
-## What doesn't work perfectly
+Base URL: `https://github-repo-explorer-api-nkqm.onrender.com`
 
-- Search only happens when you press Enter or click the button — I didn't add debounced search-as-you-type
-- "Load more" guesses whether there are more pages by checking if GitHub returned exactly 30 repos, instead of using the Link header
-- Sorting only applies to repos you've already loaded
-- The language chart only counts repos you've loaded so far
-- Cache is in-memory and resets when you restart the server
-- Any 403 from GitHub gets treated as a rate limit, which isn't always accurate
+### `GET /api/user/:username`
+Fetch a user's public profile.
 
-## If I had more time
+**Response `200`**
+```json
+{
+  "login": "torvalds",
+  "name": "Linus Torvalds",
+  "avatar_url": "https://avatars.githubusercontent.com/u/1024025",
+  "bio": "Nothing to see here",
+  "followers": 230000,
+  "following": 0,
+  "public_repos": 8,
+  "html_url": "https://github.com/torvalds"
+}
+```
+**Response `404`** `{ "error": "User not found" }`
 
-I'd add debounced search, use GitHub's pagination headers properly, and write at least one integration test for the backend routes.
+---
+
+### `GET /api/user/:username/repos?page=1&per_page=30`
+Fetch a page of public repos.
+
+**Query params:**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | integer | `1` | Page number |
+| `per_page` | integer | `30` | Results per page |
+
+**Response `200`** — returns a plain array of repo objects
+```json
+[
+  {
+    "id": 2325298,
+    "name": "linux",
+    "full_name": "torvalds/linux",
+    "description": "Linux kernel source tree",
+    "stargazers_count": 180000,
+    "forks_count": 55000,
+    "language": "C",
+    "updated_at": "2024-06-01T12:00:00Z",
+    "default_branch": "master",
+    "open_issues_count": 0,
+    "html_url": "https://github.com/torvalds/linux"
+  }
+]
+```
+**Response `404`** `{ "error": "User not found" }`
+
+---
+
+## Project Structure
+
+```
+github_repo_explorer/
+├── client/                  # React frontend (Vite)
+│   └── src/
+│       ├── api/github.js    # Calls the Express backend
+│       ├── components/      # SearchBar, ProfileCard, RepoList, RepoCard,
+│       │                    # RecentSearches, SortControls, LanguageChart
+│       ├── utils/sortRepos.js  # Pure sort helper (stars / name / updated)
+│       └── App.jsx          # Root component; owns all state
+│
+├── server/                  # Express backend
+│   ├── index.js             # Entry point, mounts routes
+│   ├── routes/github.js     # /api/user/:username handlers
+│   └── cache.js             # In-memory TTL cache (60s)
+│
+└── README.md
+```
+
+---
+
+## Next Steps
+
+**Known limitations I didn't address:**
+- Search fires on Enter/click only — no debounced live search
+- "Load more" detects next pages by checking if GitHub returned exactly 30 repos instead of reading the `Link` header properly
+- Sorting only applies to already-loaded repos
+- Cache is in-memory and resets on server restart
+- No backend integration tests
+
+**What I'd build next:**
+- Proper pagination via GitHub's `Link` response header
+- Debounced search-as-you-type
+- Backend route tests with Supertest
+- Repo language filter in the UI
+- Persistent cache with Redis
