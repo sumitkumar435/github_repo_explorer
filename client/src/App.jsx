@@ -8,7 +8,7 @@ import LanguageChart from './components/LanguageChart';
 import { fetchProfile, fetchRepos } from './api/github';
 import { sortRepos } from './utils/sortRepos';
 
-function errMsg({ message }) {
+function ErrMsg({ message }) {
   return (
     <div className="p-4 rounded-2xl border border-red-500/30 bg-red-950/40 backdrop-blur-md text-red-300 text-sm">
       {message}
@@ -139,7 +139,7 @@ export default function App() {
 
         {error && !loading && (
           <div className="mt-6">
-            <errMsg message={error} />
+            <ErrMsg message={error} />
           </div>
         )}
 
@@ -153,11 +153,11 @@ export default function App() {
               onToggle={(name) =>
                 setExpandedRepo((prev) => (prev === name ? null : name))
               }
-              onmoreToLoad={moreToLoad}
+              onLoadMore={moreToLoad}
               hasMore={hasMore}
               loadingMore={loadingMore}
             />
-            {moreToLoadError && <errMsg message={moreToLoadError} />}
+            {moreToLoadError && <ErrMsg message={moreToLoadError} />}
             <LanguageChart repos={repos} />
           </div>
         )}
