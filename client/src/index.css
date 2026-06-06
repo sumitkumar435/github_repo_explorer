@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #030712;
+  color: #e2e8f0;
+}
+
+.app-bg {
+  min-height: 100vh;
+  background-color: #030712;
+  background-image:
+    radial-gradient(ellipse 80% 55% at 15% 0%, rgba(99, 102, 241, 0.28) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 50% at 85% 5%, rgba(139, 92, 246, 0.22) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(59, 130, 246, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, #030712 0%, #0f172a 45%, #030712 100%);
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-2xl border border-white/10 bg-surface-card/60 backdrop-blur-md shadow-xl shadow-black/20;
+  }
+
+  .glass-pill {
+    @apply rounded-full border border-white/10 bg-surface-card/50 backdrop-blur-xl shadow-lg shadow-black/30;
+  }
+}
